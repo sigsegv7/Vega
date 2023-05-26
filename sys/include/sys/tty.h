@@ -56,12 +56,12 @@ struct winsize {
  */
 
 struct tty_display {
-        struct winsize winsize;
-        struct fbdev fbdev;
-        size_t cursor_x;
-        size_t cursor_y;
-        uint32_t bg;
-        uint32_t fg;
+        struct winsize winsize;         /* Window size */
+        struct fbdev fbdev;             /* Framebuffer device */
+        size_t textpos_x;               /* Y position to draw next char */
+        size_t textpos_y;               /* X position to draw next char */
+        uint32_t bg;                    /* Background color */
+        uint32_t fg;                    /* Foreground color */
 };
 
 /*

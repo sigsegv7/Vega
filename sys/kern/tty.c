@@ -80,8 +80,8 @@ tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
                 for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
                         uint16_t col = tty_get_col_char(c, cx, cy);
                         uint32_t color = col ? fg : bg;
-                        uint32_t x = display->cursor_x + cx;
-                        uint32_t y = display->cursor_y + cy;
+                        uint32_t x = display->textpos_x + cx;
+                        uint32_t y = display->textpos_y + cy;
 
                         size_t index = fb_get_index(&display->fbdev, x, y);
                         fb_ptr(display->fbdev.fb_mem)[index] = color;
@@ -111,7 +111,7 @@ tty_putch(struct tty *tty, int c)
                  * char and return.
                  */
                 tty_draw_char(tty, c, display->fg, display->fg);
-                display->cursor_x += width_of(1);
+                display->textpos_x += width_of(1);
                 return 0;
         }
 
@@ -121,20 +121,20 @@ tty_putch(struct tty *tty, int c)
                 /* Ignore null byte */
                 return 0;
         case ASCII_CR:
-                display->cursor_x = 0;
+                display->textpos_x = 0;
                 return 0;
         case ASCII_LF:
                 if (__TEST(oflag & ONLCR)) {
                         /* Translate LF to CR-LF, write CR first */
                         tty_putch(tty, ASCII_CR);
                 }
-                display->cursor_y += height_mul(1);
-                display->cursor_x = 0;
+                display->textpos_y += height_mul(1);
+                display->textpos_x = 0;
                 return 0;
         default:
                 /* Normal character, write it out */
                 tty_draw_char(tty, c, display->fg, display->bg);
-                display->cursor_x += width_of(1);
+                display->textpos_x += width_of(1);
                 break;
         }
         return 0;
