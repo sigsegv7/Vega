@@ -1,0 +1,16 @@
+*.iso
+*.o
+*.so
+*.ko
+*.d
+*.log
+*.status
+/OVMF.fd
+/base
+/autom4te.cache
+/Makefile
+/stand
+/cross
+/configure
+/sys/kern/ksyms.c
+/sys/include/machine
