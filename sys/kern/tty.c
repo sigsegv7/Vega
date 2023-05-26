@@ -62,7 +62,7 @@ static void
 tty_buf_push(struct tty *tty, char c)
 {
         /* Push the byte to the buffer */
-        *tty->t_bufcur = c; 
+        *tty->t_bufcur = c;
         ++tty->t_buflen, ++tty->t_bufcur;
 
         /* Check if we need to flush the buffer */
@@ -148,15 +148,15 @@ int
 tty_write(struct tty *tty, const char *buf, size_t len)
 {
         mutex_acquire(&tty_lock);
-        for (size_t i = 0; i < len; ++i) { 
+        for (size_t i = 0; i < len; ++i) {
                 tty_buf_push(tty, buf[i]);
                 if (buf[i] == '\n' && __TEST(tty->t_oflag & OFLUSHONNL)) {
                         /* Buffered newline, have OFLUSHONNL, flush buffer */
                         tty_flush(tty);
                 }
         }
-        
-        /* 
+
+        /*
          * Flush the buffer if needed. The buffer can be empty
          * if a newline was written last, hence we check that too.
          */
@@ -187,12 +187,12 @@ tty_flush(struct tty *tty)
          * Flush and clear each byte from
          * the TTY buffer.
          */
-        
+
         for (size_t i = 0; i < tty->t_buflen; ++i) {
                 tty_putch(tty, tty->t_bufdata[i]);
                 tty->t_bufdata[i] = '\0';
         }
- 
+
         tty_reset_buf(tty);
         return 0;
 }
