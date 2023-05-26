@@ -60,6 +60,8 @@ struct tty_display {
         struct fbdev fbdev;             /* Framebuffer device */
         size_t textpos_x;               /* Y position to draw next char */
         size_t textpos_y;               /* X position to draw next char */
+        size_t cursor_x;                /* Cursor X position */
+        size_t cursor_y;                /* Cursor Y position */
         uint32_t bg;                    /* Background color */
         uint32_t fg;                    /* Foreground color */
 };
@@ -104,11 +106,12 @@ struct tty {
 
 void tty_set_defaults(struct tty *tty);
 void tty_attach(struct tty *tty);
-int tty_putch(struct tty *tty, int c);
 int tty_write(struct tty *tty, const char *buf, size_t len);
 int tty_flush(struct tty *tty);
 struct termios tty_get_attr(const struct tty *tty);
 void tty_set_attr(struct tty *tty, struct termios attr);
+void tty_show_cursor(struct tty *tty);
+void tty_hide_cursor(struct tty *tty);
 void tty_acquire_lock(void);
 void tty_release_lock(void);
 void tty_init(void);

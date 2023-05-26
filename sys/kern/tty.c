@@ -39,6 +39,10 @@
  */
 #define width_of(n_chars) (FONT_WIDTH*n_chars)
 
+/*
+ * Returns a y position in multiples
+ * of FONT_HEIGHT.
+ */
 #define height_mul(n) (FONT_HEIGHT*n)
 
 static TAILQ_HEAD(, tty) tty_list;
@@ -98,7 +102,7 @@ tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
  *
  * Call with tty_lock acquired.
  */
-int
+static int
 tty_putch(struct tty *tty, int c)
 {
         struct tty_display *display = &tty->display;
@@ -187,12 +191,12 @@ tty_flush(struct tty *tty)
          * Flush and clear each byte from
          * the TTY buffer.
          */
-
+        tty_hide_cursor(tty);
         for (size_t i = 0; i < tty->t_buflen; ++i) {
                 tty_putch(tty, tty->t_bufdata[i]);
                 tty->t_bufdata[i] = '\0';
         }
-
+        tty_show_cursor(tty);
         tty_reset_buf(tty);
         return 0;
 }
@@ -251,6 +255,7 @@ tty_attach(struct tty *tty)
         mutex_acquire(&tty_lock);
         TAILQ_INSERT_TAIL(&tty_list, tty, link);
         ++tty_count;
+        tty_show_cursor(tty);
         mutex_release(&tty_lock);
 }
 
