@@ -197,10 +197,6 @@ tty_flush(struct tty *tty)
         return 0;
 }
 
-/*
- * It is
- */
-
 struct termios
 tty_get_attr(const struct tty *tty)
 {
