@@ -67,7 +67,7 @@
     }
 
 #if defined(_KERNEL)
-# define __asmv     __asm__ __volatile__
+# define __ASM      __asm__ __volatile__
 # define __isr      __attribute__((__interrupt__))
 #endif      /* defined(_KERNEL) */
 
