@@ -93,6 +93,37 @@ tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
         }
 }
 
+static void
+tty_append_char(struct tty *tty, int c)
+{
+        struct tty_display *display = &tty->display;
+        struct fbdev *fbdev = &display->fbdev;
+        struct winsize *ws = &display->winsize;
+
+        tty_draw_char(tty, c, display->fg, display->bg);
+        display->textpos_x += width_of(1);
+        
+        /* Check for invalid ws_xpixel */
+        if (ws->ws_xpixel > fbdev->width) {
+                ws->ws_xpixel = fbdev->width;
+        }
+        /*
+         * Check for overflow.
+         * End of screen counts as the width
+         * of the window subtracted by the width
+         * of a character.
+         */
+        if (display->cursor_x >= ws->ws_xpixel - width_of(1) ||
+            display->textpos_x >= ws->ws_xpixel - width_of(1)) {
+                display->cursor_x = 0;
+                display->textpos_x = 0;
+                
+                /* Make a newline */
+                display->cursor_y += height_mul(1);
+                display->textpos_y += height_mul(1);
+        }
+}
+
 /*
  * Output a single char onto the
  * TTY. Process the output if needed.
@@ -114,8 +145,7 @@ tty_putch(struct tty *tty, int c)
                  * Do not process output, just output the
                  * char and return.
                  */
-                tty_draw_char(tty, c, display->fg, display->fg);
-                display->textpos_x += width_of(1);
+                tty_append_char(tty, c);
                 return 0;
         }
 
@@ -137,8 +167,7 @@ tty_putch(struct tty *tty, int c)
                 return 0;
         default:
                 /* Normal character, write it out */
-                tty_draw_char(tty, c, display->fg, display->bg);
-                display->textpos_x += width_of(1);
+                tty_append_char(tty, c);
                 break;
         }
         return 0;

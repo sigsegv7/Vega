@@ -57,7 +57,7 @@ struct winsize {
 
 struct tty_display {
         struct winsize winsize;         /* Window size */
-        struct fbdev fbdev;             /* Framebuffer device */
+        struct fbdev fbdev;             /* Framebuffer device (private) */
         size_t textpos_x;               /* Y position to draw next char */
         size_t textpos_y;               /* X position to draw next char */
         size_t cursor_x;                /* Cursor X position */
