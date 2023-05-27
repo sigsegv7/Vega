@@ -159,8 +159,11 @@ tty_append_char(struct tty *tty, int c)
         tty_draw_char(tty, c, display->fg, display->bg);
         display->textpos_x += width_of(1);
         display->cursor_x += width_of(1);
-
-        /* Check for overflow */
+        /*
+         * If we are about to advance off-screen
+         * then we shall wrap to the next line
+         * to avoid graphical artifacts.
+         */
         if (tty_is_x_overflow(display)) {
                 /*
                  * If we are at the bottom of the screen, scroll.
@@ -216,8 +219,13 @@ tty_putch(struct tty *tty, int c)
                         /* Translate LF to CR-LF, write CR first */
                         tty_putch(tty, ASCII_CR);
                 }
+                /*
+                 * If we have room, make a newline.
+                 * Otherwise, scroll to avoid issues
+                 * like going out of bounds with
+                 * framebuffer memory.
+                 */
                 if (!tty_is_y_overflow(display)) {
-                        /* No y-overflow, make a newline */
                         display->textpos_y += height_mul(1);
                         display->cursor_y += height_mul(1);
                         display->textpos_x = 0;
