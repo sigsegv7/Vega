@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for file in $(find docs/pre_man -name "*.md")
+do
+        name=${file%.md}.man
+        base=$(basename $name)
+        pandoc $file -s -t man > docs/man/$base
+done

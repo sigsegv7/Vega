@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Check if an argument is provided
+if [ $# -eq 0 ]; then
+        echo "Example usage: $0 \"tty(9)\""
+        echo "NOTE: Run outside of the tools directory"
+        echo "Available manpages:"
+
+        for file in $(find docs/man -name "*.man")
+        do
+                base=$(basename $file)
+                section=$(echo "$base" | sed -n 's/.*\.\([0-9]*\)\..*/\1/p')
+                echo "- ${base%.*.*}(${section})"
+        done
+        exit 1
+fi
+
+# Extract the name and section from the input
+input=$1
+name=$(echo "$input" | sed 's/(\([0-9]*\))$//')
+section=$(echo "$input" | sed 's/.*(\([0-9]*\))$/\1/')
+
+output="${name}.${section}.man"
+man -l - 2> /dev/null < docs/man/$output || \
+        echo "Could not find requested manpage"

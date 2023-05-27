@@ -4,7 +4,10 @@
 *.ko
 *.d
 *.log
+*.man
 *.status
+/docs/kernel/html
+/docs/kernel/man
 /OVMF.fd
 /base
 /autom4te.cache
