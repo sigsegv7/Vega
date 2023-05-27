@@ -37,6 +37,7 @@
 void syslog_init(void);
 void vkprintf(const char *fmt, va_list *ap);
 void kprintf(const char *fmt, ...);
+void kprintf_oflag(int attr, const char *fmt, ...);
 
 #endif          /* defined(_KERNEL) */
 #endif          /* _SYS_SYSLOG_H_ */

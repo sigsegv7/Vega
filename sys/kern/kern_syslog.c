@@ -30,8 +30,10 @@
 #include <sys/syslog.h>
 #include <sys/tty.h>
 #include <string.h>
+#include <sys/mutex.h>
 
 static struct tty syslog_tty = { 0 };
+static struct mutex kprintf_lock = MUTEX_INIT;
 
 static void
 vprintf_fmt(char fmt_code, va_list *ap)
@@ -64,6 +66,14 @@ vprintf_fmt(char fmt_code, va_list *ap)
         }
 }
 
+static void
+syslog_set_attr(struct termios attr)
+{
+        mutex_acquire(&kprintf_lock);
+        tty_set_attr(&syslog_tty, attr);
+        mutex_release(&kprintf_lock);
+}
+
 /*
  * NOTE: The `va_list` pointer is a workaround
  *       for a quirk in AARCH64 for functions
@@ -91,6 +101,29 @@ kprintf(const char *fmt, ...)
         va_start(ap, fmt);
         vkprintf(fmt, &ap);
         va_end(ap);
+        mutex_release(&kprintf_lock);
+}
+
+/*
+ * Same thing as kprintf() but with a
+ * termios oflag attribute for this
+ * print call (only).
+ */
+void
+kprintf_oflag(int attr, const char *fmt, ...)
+{
+        va_list ap;
+        struct termios termios = tty_get_attr(&syslog_tty);
+
+        termios.c_oflag |= attr;
+        syslog_set_attr(termios);
+
+        va_start(ap, fmt);
+        vkprintf(fmt, &ap);
+        va_end(ap);
+
+        termios.c_oflag &= ~(attr);
+        syslog_set_attr(termios);
 }
 
 /*
