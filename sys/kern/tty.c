@@ -139,8 +139,10 @@ tty_scroll_single(struct tty *tty)
                          &fb_mem[fb_get_index(fbdev, 0, y)],
                          FONT_HEIGHT*line_size);
         }
-
-        /* Reset cursor/textpos x to 0 */
+        /*
+         * Ensure we start at position 0
+         * after we scrolled down.
+         */
         display->textpos_x = 0;
         display->cursor_x = 0;
 }
@@ -160,7 +162,10 @@ tty_append_char(struct tty *tty, int c)
 
         /* Check for overflow */
         if (tty_is_x_overflow(display)) {
-                /* Make a newline if there is no y-overflow */
+                /*
+                 * If we are at the bottom of the screen, scroll.
+                 * Otherwise, make a newline and advance the y-position.
+                 */
                 if (!tty_is_y_overflow(display)) {
                         display->cursor_y += height_mul(1);
                         display->textpos_y += height_mul(1);
@@ -239,18 +244,20 @@ tty_write(struct tty *tty, const char *buf, size_t len)
         mutex_acquire(&tty_lock);
         for (size_t i = 0; i < len; ++i) {
                 tty_buf_push(tty, buf[i]);
+                /*
+                 * If we have a newline and OFLUSHONNL is set,
+                 * we shall flush the TTY buffer.
+                 */
                 if (buf[i] == '\n' && __TEST(tty->t_oflag & OFLUSHONNL)) {
-                        /* Buffered newline, have OFLUSHONNL, flush buffer */
                         tty_flush(tty);
                 }
         }
-
         /*
-         * Flush the buffer if needed. The buffer can be empty
-         * if a newline was written last, hence we check that too.
+         * Flush the buffer (per write call) if we have
+         * OWRITEFLUSH set and if it wasn't already
+         * flushed by a newline.
          */
         if (__TEST(tty->t_oflag & OWRITEFLUSH) && tty->t_buflen > 0) {
-                /* Data has been written, flush the TTY */
                 tty_flush(tty);
         }
         mutex_release(&tty_lock);
