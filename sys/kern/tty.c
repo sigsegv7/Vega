@@ -123,6 +123,29 @@ tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
         }
 }
 
+/*
+ * Backspaces a character.
+ *
+ * Call with tty_lock acquired.
+ */
+static void
+tty_backspace(struct tty *tty)
+{
+        struct tty_display *display = &tty->display;
+
+        if (display->textpos_x > 0) {
+                display->cursor_x -= FONT_WIDTH;
+                display->textpos_x -= FONT_WIDTH;
+        } else if (display->textpos_y > 0) {
+                /* Nothing on this line, go up one line */
+                display->cursor_x -= FONT_HEIGHT;
+                display->cursor_y -= FONT_HEIGHT;
+        }
+
+        /* Overwrite the previous character */
+        tty_draw_char(tty, ' ', TTY_DEFAULT_FG, display->bg);
+}
+
 static void
 tty_scroll_single(struct tty *tty)
 {
@@ -213,6 +236,10 @@ tty_putch(struct tty *tty, int c)
                 return 0;
         case ASCII_CR:
                 display->textpos_x = 0;
+                display->cursor_x = 0;
+                return 0;
+        case ASCII_BS:
+                tty_backspace(tty);
                 return 0;
         case ASCII_LF:
                 if (__TEST(oflag & ONLCR)) {
