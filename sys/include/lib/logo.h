@@ -27,26 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/syslog.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <lib/logo.h>
-#include <dev/video/fb.h>
 
-void
-main(void)
-{
-        /* Get the main framebuffer working */
-        fb_register_front();
+#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
 
-        /* Start up the TTY */
-        tty_init();
+#define print_logo()                                    \
+        kprintf("%s v%s\n\n", g_logo, VEGA_VERSION);    \
+        kprintf("\t\t\t\t\t\t%s\n\n", COPYRIGHT);
 
-        /* Start up the kernel logging subsystem */
-        syslog_init();
-
-        /* Write out the logo, version and copyright */
-        print_logo();
-	for (;;);
-}
+extern uint8_t g_logo[];
