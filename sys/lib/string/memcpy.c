@@ -38,3 +38,13 @@ memcpy32(void *src, void *dest, size_t n)
 
         return dest;
 }
+
+void *
+memcpy(void *src, void *dest, size_t n)
+{
+        for (size_t i = 0; i < n; ++i) {
+                ((uint8_t *)src)[i] = ((uint8_t *)dest)[i];
+        }
+
+        return dest;
+}
