@@ -64,7 +64,7 @@ lock within the TTY subsystem.
 # RETURN VALUES
 The ``tty_write()`` function returns 0 on success.
 
-The ``tty_flush()`` function returns 0 on flushing
+The ``tty_flush()`` function returns 0 upon flushing
 data from the buffer and returns 1 if there is nothing
 to flush.
 
