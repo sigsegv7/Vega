@@ -34,6 +34,7 @@
 #include <sys/mutex.h>
 #include <sys/queue.h>
 #include <sys/termios.h>
+#include <sys/tty_ansi.h>
 #include <dev/video/fb.h>
 
 #define MAX_WATERMARK 32
@@ -46,6 +47,9 @@
 #define CURSOR_HEIGHT           20
 #define CURSOR_BG               0x808080
 #define CURSOR_BG_INVERT        0x000000
+
+#define TTY_DEFAULT_FG          0x808080
+#define TTY_DEFAULT_BG          0x808080
 
 struct winsize {
         uint16_t ws_row;        /* Rows, in characters */
@@ -87,6 +91,7 @@ struct tty_cbuf {
 
 struct tty {
         TAILQ_ENTRY(tty) link;
+        struct tty_ansi_state ansi_state;
         struct tty_cbuf cbuf;
         struct tty_display display;
         struct termios termios;
@@ -106,7 +111,6 @@ struct tty {
 #define t_bufdata       cbuf.data
 
 #if defined(_KERNEL)
-
 void tty_set_defaults(struct tty *tty);
 void tty_attach(struct tty *tty);
 int tty_write(struct tty *tty, const char *buf, size_t len);
@@ -114,10 +118,10 @@ int tty_flush(struct tty *tty);
 struct termios tty_get_attr(const struct tty *tty);
 void tty_set_attr(struct tty *tty, struct termios attr);
 void tty_show_cursor(struct tty *tty);
+void tty_clear(struct tty *tty);
 void tty_hide_cursor(struct tty *tty);
 void tty_acquire_lock(void);
 void tty_release_lock(void);
 void tty_init(void);
-
 #endif          /* defined(_KERNEL) */
 #endif          /* _SYS_TTY_H_ */

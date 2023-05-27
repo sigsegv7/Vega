@@ -235,8 +235,16 @@ tty_putch(struct tty *tty, int c)
                 }
                 return 0;
         default:
-                /* Normal character, write it out */
-                tty_append_char(tty, c);
+                /*
+                 * We can write out the character if it is not
+                 * the beginning of an escape code and we aren't
+                 * already parsing an escape code.
+                 */
+                if (!VT_ESC_IS_PARSING(&tty->ansi_state) && c != '\033') {
+                        tty_append_char(tty, c);
+                } else {
+                        tty_ansi_esc_process(&tty->ansi_state, c);
+                }
                 break;
         }
         return 0;
@@ -334,7 +342,7 @@ tty_set_defaults(struct tty *tty)
 
         /* Setup the display */
         display->fbdev = front_fb;
-        display->fg = 0x808080;
+        display->fg = TTY_DEFAULT_FG;
         ws->ws_row = front_fb.height/FONT_HEIGHT;
         ws->ws_col = front_fb.width/FONT_WIDTH;
         ws->ws_xpixel = front_fb.width;
@@ -344,6 +352,34 @@ tty_set_defaults(struct tty *tty)
         tty->t_oflag =
                 OFLUSHONNL      |
                 OPOST;
+
+        tty->ansi_state = tty_make_ansi_state(tty);
+}
+
+/*
+ * Clears the TTY.
+ * Call with tty_lock acquired.
+ */
+void
+tty_clear(struct tty *tty)
+{
+        struct tty_display *display = &tty->display;
+        struct winsize *ws = &display->winsize;
+        uint32_t *fb_mem = fb_ptr(display->fbdev.fb_mem);
+
+        /* Clear the entire window */
+        for (uint16_t y = 0; y < ws->ws_ypixel; ++y) {
+                for (uint16_t x  = 0; x < ws->ws_xpixel; ++x) {
+                        uint32_t color = display->bg;
+                        fb_mem[fb_get_index(&display->fbdev, x, y)] = color;
+                }
+        }
+
+        display->cursor_x = 0;
+        display->textpos_x = 0;
+
+        display->cursor_y = 0;
+        display->textpos_y = 0;
 }
 
 /*
