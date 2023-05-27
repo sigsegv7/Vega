@@ -42,7 +42,10 @@
 #define FONT_WIDTH 9
 #define FONT_HEIGHT 16
 
-#define TTY_NO_LOCK     __BIT(0)
+#define CURSOR_WIDTH            FONT_WIDTH
+#define CURSOR_HEIGHT           20
+#define CURSOR_BG               0x808080
+#define CURSOR_BG_INVERT        0x000000
 
 struct winsize {
         uint16_t ws_row;        /* Rows, in characters */

@@ -30,20 +30,13 @@
 #include <sys/tty.h>
 #include <lib/tty_font.h>
 
-#define CURSOR_WIDTH            FONT_WIDTH
-#define CURSOR_HEIGHT           20
-#define CURSOR_BG               0x808080
-#define CURSOR_BG_INVERT        0x000000
-
 static void
 tty_draw_cursor_pixel(struct tty *tty, uint32_t x, uint32_t y,
                       uint32_t color)
 {
         struct tty_display *display = &tty->display;
         uint32_t fb_idx = fb_get_index(&display->fbdev, x, y);
-
         uint32_t *fb_mem = fb_ptr(display->fbdev.fb_mem);
-        uint32_t old_pixel = fb_mem[fb_idx] != display->bg;
 
         if (fb_mem[fb_idx] != display->bg && color != display->bg) {
                 /*
@@ -82,14 +75,9 @@ static void
 tty_draw_cursor_as(struct tty *tty, bool hidden)
 {
         struct tty_display *display = &tty->display;
-        uint32_t cursor_x = display->textpos_x;
-        uint32_t cursor_y = display->textpos_y;
+        uint32_t cursor_x = display->cursor_x;
+        uint32_t cursor_y = display->cursor_y;
         uint32_t color = hidden ? display->bg : CURSOR_BG;
-
-        if (display->textpos_x == 0) {
-                /* Keep the cursor at the start */
-                cursor_x = 0;
-        }
         tty_draw_cursor(tty, cursor_x, cursor_y, color);
 }
 

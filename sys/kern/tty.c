@@ -33,6 +33,7 @@
 #include <sys/cdefs.h>
 #include <dev/video/fb.h>
 #include <lib/tty_font.h>
+#include <string.h>
 
 /*
  * Returns the width of n chars in pixels.
@@ -53,6 +54,35 @@ static inline uint16_t
 tty_get_col_char(char c, uint32_t cx, uint32_t cy)
 {
         return (DEFAULT_FONT_DATA[(uint64_t)c * FONT_WIDTH + cx] >> cy) & 1;
+}
+
+/*
+ * These functions check if
+ * the x/y positions are overflowing.
+ */
+
+static inline bool
+tty_is_x_overflow(struct tty_display *display)
+{
+        struct winsize *ws = &display->winsize;
+
+        /* Check for invalid ws_xpixel */
+        if (ws->ws_xpixel > display->fbdev.width) {
+                ws->ws_xpixel = display->fbdev.width;
+        }
+        return display->cursor_x >= ws->ws_xpixel - width_of(2);
+}
+
+static inline bool
+tty_is_y_overflow(struct tty_display *display)
+{
+        struct winsize *ws = &display->winsize;
+
+        /* Check for invalid ws_ypixel */
+        if (ws->ws_ypixel > display->fbdev.width) {
+                ws->ws_ypixel = display->fbdev.height;
+        }
+        return display->cursor_y >= ws->ws_ypixel - height_mul(2);
 }
 
 static inline void
@@ -94,33 +124,52 @@ tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
 }
 
 static void
-tty_append_char(struct tty *tty, int c)
+tty_scroll_single(struct tty *tty)
 {
         struct tty_display *display = &tty->display;
         struct fbdev *fbdev = &display->fbdev;
         struct winsize *ws = &display->winsize;
 
+        size_t line_size = fbdev->pitch/4;
+        uint32_t *fb_mem = fb_ptr(fbdev->fb_mem);
+
+        /* Copy each line up */
+        for (size_t y = FONT_HEIGHT; y < ws->ws_ypixel; y += FONT_HEIGHT) {
+                memcpy32(&fb_mem[fb_get_index(fbdev, 0, y - FONT_HEIGHT)],
+                         &fb_mem[fb_get_index(fbdev, 0, y)],
+                         FONT_HEIGHT*line_size);
+        }
+
+        /* Reset cursor/textpos x to 0 */
+        display->textpos_x = 0;
+        display->cursor_x = 0;
+}
+
+/*
+ * Helper function for tty_putch().
+ */
+
+static void
+tty_append_char(struct tty *tty, int c)
+{
+        struct tty_display *display = &tty->display;
+
         tty_draw_char(tty, c, display->fg, display->bg);
         display->textpos_x += width_of(1);
-        
-        /* Check for invalid ws_xpixel */
-        if (ws->ws_xpixel > fbdev->width) {
-                ws->ws_xpixel = fbdev->width;
-        }
-        /*
-         * Check for overflow.
-         * End of screen counts as the width
-         * of the window subtracted by the width
-         * of a character.
-         */
-        if (display->cursor_x >= ws->ws_xpixel - width_of(1) ||
-            display->textpos_x >= ws->ws_xpixel - width_of(1)) {
-                display->cursor_x = 0;
-                display->textpos_x = 0;
-                
-                /* Make a newline */
-                display->cursor_y += height_mul(1);
-                display->textpos_y += height_mul(1);
+        display->cursor_x += width_of(1);
+
+        /* Check for overflow */
+        if (tty_is_x_overflow(display)) {
+                /* Make a newline if there is no y-overflow */
+                if (!tty_is_y_overflow(display)) {
+                        display->cursor_y += height_mul(1);
+                        display->textpos_y += height_mul(1);
+
+                        display->textpos_x = 0;
+                        display->cursor_x = 0;
+                } else {
+                        tty_scroll_single(tty);
+                }
         }
 }
 
@@ -162,8 +211,15 @@ tty_putch(struct tty *tty, int c)
                         /* Translate LF to CR-LF, write CR first */
                         tty_putch(tty, ASCII_CR);
                 }
-                display->textpos_y += height_mul(1);
-                display->textpos_x = 0;
+                if (!tty_is_y_overflow(display)) {
+                        /* No y-overflow, make a newline */
+                        display->textpos_y += height_mul(1);
+                        display->cursor_y += height_mul(1);
+                        display->textpos_x = 0;
+                        display->cursor_x = 0;
+                } else {
+                        tty_scroll_single(tty);
+                }
                 return 0;
         default:
                 /* Normal character, write it out */
