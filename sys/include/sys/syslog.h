@@ -30,9 +30,13 @@
 #ifndef _SYS_SYSLOG_H_
 #define _SYS_SYSLOG_H_
 
+#include <stdarg.h>
+
 #if defined(_KERNEL)
 
 void syslog_init(void);
+void vkprintf(const char *fmt, va_list *ap);
+void kprintf(const char *fmt, ...);
 
 #endif          /* defined(_KERNEL) */
 #endif          /* _SYS_SYSLOG_H_ */

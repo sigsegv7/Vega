@@ -29,15 +29,75 @@
 
 #include <sys/syslog.h>
 #include <sys/tty.h>
+#include <string.h>
 
 static struct tty syslog_tty = { 0 };
+
+static void
+vprintf_fmt(char fmt_code, va_list *ap)
+{
+        char buf[100] = { 0 };
+        int64_t tmp;
+        int c;
+        const char *s = NULL;
+
+        switch (fmt_code) {
+        case 'c':
+                c = va_arg(*ap, int);
+                tty_write(&syslog_tty, (char *)&c, 1);
+                break;
+        case 's':
+                s = va_arg(*ap, const char *);
+                tty_write(&syslog_tty, s, strlen(s));
+                break;
+        case 'd':
+                tmp = va_arg(*ap, int64_t);
+                s = itoa(tmp, buf, 10);
+                tty_write(&syslog_tty, s, strlen(s));
+                break;
+        case 'x':
+        case 'p':
+                tmp = va_arg(*ap, int64_t);
+                s = itoa(tmp, buf, 16);
+                tty_write(&syslog_tty, s + 2, strlen(s));
+                break;
+        }
+}
+
+/*
+ * NOTE: The `va_list` pointer is a workaround
+ *       for a quirk in AARCH64 for functions
+ *       with variable arguments.
+ */
+void
+vkprintf(const char *fmt, va_list *ap)
+{
+        while (*fmt) {
+                if (*fmt == '%') {
+                        ++fmt;
+                        vprintf_fmt(*fmt, ap);
+                } else {
+                        tty_write(&syslog_tty, fmt, 1);
+                }
+                ++fmt;
+        }
+}
+
+void
+kprintf(const char *fmt, ...)
+{
+        va_list ap;
+
+        va_start(ap, fmt);
+        vkprintf(fmt, &ap);
+        va_end(ap);
+}
 
 /*
  * Sets up the syslog subsystem by
  * attaching its TTY as the main
  * console.
  */
-
 void
 syslog_init(void)
 {
