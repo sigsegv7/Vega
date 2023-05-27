@@ -28,17 +28,18 @@
  */
 
 #include <sys/mutex.h>
+#include <sys/atomic.h>
 
 void
 mutex_acquire(struct mutex *mutex)
 {
-        while (__atomic_test_and_set(&mutex->lock, __ATOMIC_ACQUIRE));
+        while (atomic_acquire(&mutex->lock));
 }
 
 void
 mutex_release(struct mutex *mutex)
 {
-        __atomic_clear(&mutex->lock, __ATOMIC_RELEASE);
+        atomic_release(&mutex->lock);
 }
 
 bool
