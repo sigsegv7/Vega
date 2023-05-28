@@ -40,7 +40,7 @@
 #define MAX_WATERMARK 32
 #define MIN_WATERMARK 16
 
-#define FONT_WIDTH 9
+#define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
 #define CURSOR_WIDTH            FONT_WIDTH
@@ -50,6 +50,7 @@
 
 #define TTY_DEFAULT_FG          0x808080
 #define TTY_DEFAULT_BG          0x808080
+#define TTY_TAB_WIDTH 8         /* In chars */
 
 struct winsize {
         uint16_t ws_row;        /* Rows, in characters */

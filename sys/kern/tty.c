@@ -50,12 +50,6 @@ static TAILQ_HEAD(, tty) tty_list;
 static struct mutex tty_lock = MUTEX_INIT;
 static size_t tty_count = 0;
 
-static inline uint16_t
-tty_get_col_char(char c, uint32_t cx, uint32_t cy)
-{
-        return (DEFAULT_FONT_DATA[(uint64_t)c * FONT_WIDTH + cx] >> cy) & 1;
-}
-
 /*
  * These functions check if
  * the x/y positions are overflowing.
@@ -109,16 +103,16 @@ static void
 tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
 {
         struct tty_display *display = &tty->display;
-        c -= 32;
-        for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
-                for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
-                        uint16_t col = tty_get_col_char(c, cx, cy);
-                        uint32_t color = col ? fg : bg;
-                        uint32_t x = display->textpos_x + cx;
-                        uint32_t y = display->textpos_y + cy;
+        uint32_t *fb_mem = fb_ptr(display->fbdev.fb_mem);
 
-                        size_t index = fb_get_index(&display->fbdev, x, y);
-                        fb_ptr(display->fbdev.fb_mem)[index] = color;
+        uint32_t x = display->textpos_x;
+        uint32_t y = display->textpos_y;
+
+        const unsigned char *glyph = &DEFAULT_FONT_DATA[(int)c*16];
+        for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
+                for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
+                        size_t index = fb_get_index(&display->fbdev, x+FONT_WIDTH-cx, y+cy);
+                        fb_mem[index] = glyph[cy] & (1 << cx) ? fg : bg;
                 }
         }
 }
@@ -238,6 +232,10 @@ tty_putch(struct tty *tty, int c)
                 display->textpos_x = 0;
                 display->cursor_x = 0;
                 return 0;
+        case ASCII_HT:
+                display->textpos_x += width_of(TTY_TAB_WIDTH);
+                display->cursor_x += width_of(TTY_TAB_WIDTH);
+                break;
         case ASCII_BS:
                 tty_backspace(tty);
                 return 0;
