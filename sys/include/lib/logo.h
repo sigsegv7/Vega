@@ -34,6 +34,6 @@
 
 #define print_logo()                                    \
         kprintf("%s v%s\n\n", g_logo, VEGA_VERSION);    \
-        kprintf("\t\t\t\t\t\t%s\n\n", COPYRIGHT);
+        kprintf("\t%s\n\n", COPYRIGHT);
 
 extern uint8_t g_logo[];
