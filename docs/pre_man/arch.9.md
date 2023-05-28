@@ -25,6 +25,7 @@ be implemented are:
 
 - ``sys/arch/<arch_name>/atomic.c``
 - ``sys/arch/<arch_name>/pmap.c``
+- ``sys/arch/<arch_name>/cpu.c``
 - ``sys/include/<arch_name>/cpu.h``
 
 ``atomic.c`` contains routines for things like atomically
@@ -33,15 +34,24 @@ acquiring/releasing locks.
 ``pmap.c`` contains architecture specific virtual
 memory routines.
 
+``cpu.c`` contains CPU related routines.
+
 ``cpu.h`` contains CPU related routines and macros.
 
-Requirements in ``cpu.h``:
+_Requirements in ``cpu.h``_:
 
 - ``irq_disable()``
 - ``halt()``
 - ``full_halt()``
+- A declaration of ``bsp_early_init()``
 
-See ``sys/include/arch/amd64/cpu.h`` as an example.
+_Requirements in ``cpu.c``_:
+
+An implementation of ``bsp_early_init()`` which
+sets up the boot processor for the target arch.
+
+# CODE REFERENCES
+``sys/include/arch/amd64/cpu.h``
 
 # AUTHORS
 Ian Marco Moffett
