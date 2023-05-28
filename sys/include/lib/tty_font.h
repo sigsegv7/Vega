@@ -32,6 +32,6 @@
 
 #if defined(_KERNEL)
 
-extern const uint16_t DEFAULT_FONT_DATA[];
+extern const uint8_t DEFAULT_FONT_DATA[];
 
 #endif
