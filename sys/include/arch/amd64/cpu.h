@@ -33,11 +33,6 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-typedef struct {
-        int64_t lo;
-        int64_t hi;
-} xmm_t;
-
 struct trapframe {
         /* Standard registers */
         int64_t r15;
