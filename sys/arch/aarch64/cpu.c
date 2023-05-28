@@ -27,30 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_AARCH64_CPU_H_
-#define _SYS_AARCH64_CPU_H_
+#include <machine/cpu.h>
 
-#include <sys/cdefs.h>
-
-static inline void
-irq_disable(void)
+void
+bsp_early_init(void)
 {
-        __ASM("msr daifset, #2");
+        /* Stub */
 }
-
-static inline void
-halt(void)
-{
-        __ASM("wfi");
-}
-
-static inline void
-full_halt(void)
-{
-        irq_disable();
-        halt();
-}
-
-void bsp_early_init(void);
-
-#endif
