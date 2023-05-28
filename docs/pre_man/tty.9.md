@@ -27,7 +27,7 @@ kernel developers to control and modify the behavior
 of the TTY within the Vega kernel.
 
 The ``tty_set_defaults()`` function is used when a TTY is to be created
-and have it's descriptor's fields set to a default value.
+and have its descriptor's fields set to a default value.
 The first argument shall be a pointer to the TTY.
 It is important to use ``tty_set_defaults()`` before attaching the TTY.
 
