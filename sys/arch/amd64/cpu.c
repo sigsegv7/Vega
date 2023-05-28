@@ -35,9 +35,6 @@
 
 struct processor_info g_bsp_info = { 0 };
 
-/* Defined in sys/arch/amd64/cpu.S */
-void cpu_init_state(void);
-
 static void
 bsp_trap_init(void)
 {
