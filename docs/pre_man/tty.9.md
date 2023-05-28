@@ -1,12 +1,14 @@
-% TTY(9) TTY
-% Ian Moffett
-% May 2021
+---
+title: TTY
+section: 9
+header: Vega Kernel Developer's Manual
+date: May 27, 2023
+---
 
 # NAME
 TTY - Kernel TTY Routines
 
 # SYNOPSIS
-
 ```
 #include <sys/tty.h>
 
@@ -70,3 +72,6 @@ to flush.
 
 # CODE REFERENCES
 ``sys/kern/tty.c``
+
+# AUTHORS
+Ian Marco Moffett
