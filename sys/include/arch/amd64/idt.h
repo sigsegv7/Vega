@@ -27,99 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ARCH_AMD64_CPU_H_
-#define _ARCH_AMD64_CPU_H_
+#ifndef _ARCH_AMD64_IDT_H_
+#define _ARCH_AMD64_IDT_H_
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/cdefs.h>
 
-typedef struct {
-        int64_t lo;
-        int64_t hi;
-} xmm_t;
+#define IDT_TRAP_GATE_FLAGS     0x8F
+#define IDT_INT_GATE_FLAGS      0x8E
+#define IDT_INT_GATE_USER       0xEE
 
-struct trapframe {
-        /* Standard registers */
-        int64_t r15;
-        int64_t r14;
-        int64_t r13;
-        int64_t r12;
-        int64_t r11;
-        int64_t r10;
-        int64_t r9;
-        int64_t r8;
-        int64_t rax;
-        int64_t rbx;
-        int64_t rdx;
-        int64_t rcx;
-        int64_t rdi;
-        int64_t rsi;
-        /* Pushed by hardware */
-        int64_t error_code;
-        int64_t rip;
-        int64_t cs;
-        int64_t rflags;
-        int64_t rsp;
-        int64_t ss;
+struct idt_gate {
+        uint16_t offset_lo;     /* Low 16-bits of ISR address */
+        uint16_t cs;            /* Kernel code segment */
+        uint8_t ist   : 3;      /* Interrupt stack table */
+        uint8_t zero  : 5;      /* Unused, keep zero */
+        uint8_t type  : 4;      /* IDT_*_GATE_FLAGS */
+        uint8_t zero1 : 1;      /* Unused, keep zero */
+        uint8_t dpl   : 2;      /* Descriptor privellege level */
+        uint8_t p     : 1;      /* Must be 1 to be valid */
+        uint16_t offset_mid;    /* Middle 16-bits of ISR address */
+        uint32_t offset_hi;     /* High 32-bits of ISR address */
+        uint32_t reserved;      /* Reserved, keep zero */
 };
 
-static inline void
-irq_disable(void)
-{
-        __ASM("cli");
-}
+struct __packed idtr {
+        uint16_t limit;
+        uintptr_t offset;
+};
 
-static inline void
-halt(void)
-{
-        __ASM("hlt");
-}
+void idt_load(void);
+void idt_set_desc(uint8_t vec, uint8_t type, uintptr_t isr,
+                  uint8_t ist);
 
-static inline void
-full_halt(void)
-{
-        irq_disable();
-        halt();
-}
-
-static inline uint64_t
-rdmsr(uint32_t msr)
-{
-        uint32_t hi = 0, lo = 0;
-
-        __ASM("rdmsr"
-               : "=a" (lo), "=d" (hi)
-               : "c" (msr)
-               : "memory"
-        );
-        return ((uint64_t)hi << 32) | lo;
-}
-
-static inline void
-wrmsr(uint32_t msr, uint64_t val)
-{
-        uint32_t lo = (uint32_t)val;
-        uint32_t hi = (uint32_t)(val >> 32);
-
-        __ASM("wrmsr"
-               :
-               : "c" (msr), "a" (lo), "d" (hi)
-               : "memory"
-        );
-}
-
-static inline void
-set_fs_base(void *ptr)
-{
-        wrmsr(0xC0000100, (uintptr_t)ptr);
-}
-
-static inline void
-set_gs_base(void *ptr)
-{
-        wrmsr(0xC0000101, (uintptr_t)ptr);
-}
-
-void bsp_early_init(void);
-
-#endif          /* _ARCH_AMD64_CPU_H_ */
+#endif

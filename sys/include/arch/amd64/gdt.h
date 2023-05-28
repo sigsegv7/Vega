@@ -27,99 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ARCH_AMD64_CPU_H_
-#define _ARCH_AMD64_CPU_H_
+#ifndef _ARCH_AMD64_GDT_H_
+#define _ARCH_AMD64_GDT_H_
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/cdefs.h>
 
-typedef struct {
-        int64_t lo;
-        int64_t hi;
-} xmm_t;
+#define GDT_TSS 5
 
-struct trapframe {
-        /* Standard registers */
-        int64_t r15;
-        int64_t r14;
-        int64_t r13;
-        int64_t r12;
-        int64_t r11;
-        int64_t r10;
-        int64_t r9;
-        int64_t r8;
-        int64_t rax;
-        int64_t rbx;
-        int64_t rdx;
-        int64_t rcx;
-        int64_t rdi;
-        int64_t rsi;
-        /* Pushed by hardware */
-        int64_t error_code;
-        int64_t rip;
-        int64_t cs;
-        int64_t rflags;
-        int64_t rsp;
-        int64_t ss;
+struct __packed gdt_entry {
+        uint16_t limit;
+        uint16_t base_low;
+        uint8_t base_mid;
+        uint8_t access;
+        uint8_t granularity;
+        uint8_t base_hi;
+};
+
+struct __packed gdtr {
+        uint16_t limit;
+        uintptr_t offset;
 };
 
 static inline void
-irq_disable(void)
+gdt_load(struct gdtr *gdtr)
 {
-        __ASM("cli");
-}
-
-static inline void
-halt(void)
-{
-        __ASM("hlt");
-}
-
-static inline void
-full_halt(void)
-{
-        irq_disable();
-        halt();
-}
-
-static inline uint64_t
-rdmsr(uint32_t msr)
-{
-        uint32_t hi = 0, lo = 0;
-
-        __ASM("rdmsr"
-               : "=a" (lo), "=d" (hi)
-               : "c" (msr)
-               : "memory"
-        );
-        return ((uint64_t)hi << 32) | lo;
-}
-
-static inline void
-wrmsr(uint32_t msr, uint64_t val)
-{
-        uint32_t lo = (uint32_t)val;
-        uint32_t hi = (uint32_t)(val >> 32);
-
-        __ASM("wrmsr"
-               :
-               : "c" (msr), "a" (lo), "d" (hi)
-               : "memory"
+        __asm("lgdt %0\n"
+              "push $8\n"               /* Push CS */
+              "lea 1f(%%rip), %%rax\n"  /* Load 1 label address into RAX */
+              "push %%rax\n"            /* Push the return address (label 1) */
+              "lretq\n"                 /* Far return to update CS */
+              "1:\n"
+              "  mov $0x10, %%eax\n"
+              "  mov %%eax, %%ds\n"
+              "  mov %%eax, %%es\n"
+              "  mov %%eax, %%fs\n"
+              "  mov %%eax, %%gs\n"
+              "  mov %%eax, %%ss\n"
+              :
+              : "m" (*gdtr)
+              : "rax", "memory"
         );
 }
 
-static inline void
-set_fs_base(void *ptr)
-{
-        wrmsr(0xC0000100, (uintptr_t)ptr);
-}
+extern struct gdt_entry g_dmmy_gdt[256];
+extern struct gdtr g_early_gdtr;
 
-static inline void
-set_gs_base(void *ptr)
-{
-        wrmsr(0xC0000101, (uintptr_t)ptr);
-}
-
-void bsp_early_init(void);
-
-#endif          /* _ARCH_AMD64_CPU_H_ */
+#endif          /* _ARCH_AMD64_GDT_H_ */
