@@ -49,7 +49,7 @@
 #define CURSOR_BG_INVERT        0x000000
 
 #define TTY_DEFAULT_FG          0x808080
-#define TTY_DEFAULT_BG          0x808080
+#define TTY_DEFAULT_BG          0x000000
 #define TTY_TAB_WIDTH 8         /* In chars */
 
 struct winsize {
