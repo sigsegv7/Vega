@@ -46,6 +46,8 @@ typedef enum {
         TTY_COLOR_YELLOW,
         TTY_COLOR_BLUE,
         TTY_COLOR_MAGENTA,
+        TTY_COLOR_CYAN,
+        TTY_COLOR_WHITE,
 } tty_color_t;
 
 /*

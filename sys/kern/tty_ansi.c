@@ -58,7 +58,9 @@ tty_try_set_color(struct tty_ansi_state *state)
                 [TTY_COLOR_GREEN]    = 0x50C878,
                 [TTY_COLOR_YELLOW]   = 0xFFD700,
                 [TTY_COLOR_BLUE]     = 0x6495ED,
-                [TTY_COLOR_MAGENTA]  = 0xFF00FF
+                [TTY_COLOR_MAGENTA]  = 0xFF00FF,
+                [TTY_COLOR_CYAN]     = 0x00FFFF,
+                [TTY_COLOR_WHITE]    = 0xF5F5DC
         };
 
         struct tty_display *display = &state->tty->display;
@@ -122,6 +124,10 @@ tty_ansi_esc_process(struct tty_ansi_state *state, char c)
                         state->fg = TTY_COLOR_BLUE;
                 } else if (state->last_digit == '3' && c == '5') {
                         state->fg = TTY_COLOR_MAGENTA;
+                } else if (state->last_digit == '3' && c == '6') {
+                        state->fg = TTY_COLOR_CYAN;
+                } else if (state->last_digit == '3' && c == '7') {
+                        state->fg = TTY_COLOR_WHITE;
                 } else if (c == ';') {
                         /* Ready to parse background color */
                         state->status = TTY_ANSI_PARSE_BACKGROUND;
@@ -152,6 +158,10 @@ tty_ansi_esc_process(struct tty_ansi_state *state, char c)
                         state->bg = TTY_COLOR_BLUE;
                 } else if (state->last_digit == '4' && c == '5') {
                         state->bg = TTY_COLOR_MAGENTA;
+                } else if (state->last_digit == '4' && c == '6') {
+                        state->bg = TTY_COLOR_CYAN;
+                } else if (state->last_digit == '4' && c == '7') {
+                        state->bg = TTY_COLOR_WHITE;
                 } else if (c == 'm') {
                         /* Ready to set the color */
                         tty_try_set_color(state);
