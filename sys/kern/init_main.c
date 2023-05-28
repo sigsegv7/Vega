@@ -33,6 +33,7 @@
 #include <sys/syslog.h>
 #include <lib/logo.h>
 #include <dev/video/fb.h>
+#include <machine/cpu.h>
 
 void
 main(void)
@@ -48,5 +49,8 @@ main(void)
 
         /* Write out the logo, version and copyright */
         print_logo();
+
+        /* Setup the bootstrap processor */
+        bsp_early_init();
 	for (;;);
 }
