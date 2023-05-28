@@ -25,12 +25,23 @@ be implemented are:
 
 - ``sys/arch/<arch_name>/atomic.c``
 - ``sys/arch/<arch_name>/pmap.c``
+- ``sys/include/<arch_name>/cpu.h``
 
 ``atomic.c`` contains routines for things like atomically
 acquiring/releasing locks.
 
 ``pmap.c`` contains architecture specific virtual
 memory routines.
+
+``cpu.h`` contains CPU related routines and macros.
+
+Requirements in ``cpu.h``:
+
+- ``irq_disable()``
+- ``halt()``
+- ``full_halt()``
+
+See ``sys/include/arch/amd64/cpu.h`` as an example.
 
 # AUTHORS
 Ian Marco Moffett
