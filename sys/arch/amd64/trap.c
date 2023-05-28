@@ -76,12 +76,15 @@ trap_dump(uint16_t trapcode, struct trapframe *ctx)
                       : "memory"
                 );
 
+                /*
+                 * If a bit in the error code isn't
+                 * set, switch off the corresponding flag.
+                 */
                 for (uint8_t i = 0; i <= 4; ++i) {
                         if (!__TEST(ctx->error_code & __BIT(i))) {
                                 pf_flags[i] = '-';
                         }
                 }
-
                 kprintf("* Page fault virtual address: 0x%x\n", cr2);
                 kprintf("* Page fault flags (fmt: pwuri): %c%c%c%c%c\n",
                         pf_flags[0], pf_flags[1],
