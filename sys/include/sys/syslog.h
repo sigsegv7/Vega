@@ -48,6 +48,11 @@
         kprintf(fmt, ##__VA_ARGS__);                     \
         kprintf("\033[0m");
 
+#define kdebug(fmt, ...) \
+        kprintf("\033[32m%s:\033[34m ", __MODULE_NAME);  \
+        kprintf(fmt, ##__VA_ARGS__);                     \
+        kprintf("\033[0m");
+
 void syslog_init(void);
 void vkprintf(const char *fmt, va_list *ap);
 void kprintf(const char *fmt, ...);
