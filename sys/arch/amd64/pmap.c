@@ -170,7 +170,7 @@ pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
         }
 
         /*
-         * Fetch the PD
+         * Fetch the PD.
          */
         pd = pmap_get_next_level(pdpt, PDPT_INDEX(va), alloc, &is_huge,
                                  &is_oom);
@@ -191,7 +191,7 @@ pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
         }
 
         /*
-         * Fetch the PT
+         * Fetch the PT.
          */
         pt = pmap_get_next_level(pd, PD_INDEX(va), alloc, &is_huge,
                                  &is_oom);
