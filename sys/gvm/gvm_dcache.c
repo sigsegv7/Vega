@@ -149,7 +149,6 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
                 mutex_release(&dcache->lock);
                 return entry->pa;
         }
-
         /*
          * We didn't exit in the above statement.
          * Look for the PA in a bucket (if any).
