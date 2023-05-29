@@ -52,11 +52,6 @@ const size_t g_pagesize_map[] = {
 void
 gvm_page_init(void)
 {
-        struct translation_table tt;
-
         __try_call_weak(pmap_init);
-        pmap_get_map_table(pmap_get_pagemap(), VM_HIGHER_HALF,
-                           PAGESIZE_4K, &tt, false);
         pr_debug("GVM page system is up!\n");
-        pr_debug("paddr=0x%x\n", tt.pa);
 }
