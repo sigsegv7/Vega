@@ -29,8 +29,10 @@
 
 #include <gvm/gvm_pageframe.h>
 #include <gvm/gvm.h>
+#include <lib/bitmap.h>
+#include <lib/string.h>
+#include <lib/math.h>
 #include <sys/cdefs.h>
-#include <sys/queue.h>
 #include <sys/limine.h>
 #include <sys/module.h>
 #include <sys/syslog.h>
@@ -47,41 +49,90 @@ static volatile struct limine_memmap_request mmap_req = {
 static struct limine_memmap_response *mmap_resp = NULL;
 
 /*
- * Represents a single pageframe.
+ * Bitmap related globals.
  */
-struct pageframe {
-        uintptr_t base;
-        TAILQ_ENTRY(pageframe) link;
-};
+static size_t bitmap_size = 0;
+static size_t bitmap_free_start = 0;
+static bitmap_t bitmap = NULL;
+static struct mutex bitmap_lock = MUTEX_INIT;
 
-/*
- * A list of free page frames with
- * a lock.
- */
-static TAILQ_HEAD(, pageframe) frameq;
-static struct mutex frameq_lock = MUTEX_INIT;
-
-static inline void
-gvm_push_pageframe(uintptr_t phys)
+static void
+gvm_bitmap_alloc(void)
 {
-        /*
-         * The pageframe will hold its own
-         * physical address so convert it to
-         * a virtual address and set the `base`
-         * field.
-         */
-        struct pageframe *item = phys_to_virt(phys);
-        item->base = phys;
-        TAILQ_INSERT_HEAD(&frameq, item, link);
+        struct limine_memmap_entry *entry = NULL;
+
+        for (size_t i = 0; i < mmap_resp->entry_count; ++i) {
+                entry = mmap_resp->entries[i];
+                if (entry->type != LIMINE_MEMMAP_USABLE) {
+                        continue;
+                }
+
+                if (entry->length >= bitmap_size) {
+                        bitmap = (bitmap_t)phys_to_virt(entry->base);
+                        memset(bitmap, 0xFF, bitmap_size);
+                        entry->length -= bitmap_size;
+                        entry->base += bitmap_size;
+                        return;
+                }
+        }
+}
+
+static void
+gvm_bitmap_populate(void)
+{
+        struct limine_memmap_entry *entry = NULL;
+
+        for (size_t i = 0; i < mmap_resp->entry_count; ++i) {
+                entry = mmap_resp->entries[i];
+
+                if (entry->type != LIMINE_MEMMAP_USABLE) {
+                        continue;
+                }
+
+                if (bitmap_free_start == 0) {
+                        bitmap_free_start = entry->base/0x1000;
+                }
+
+                for (size_t j = 0; j < entry->length; j += 0x1000) {
+                        bitmap_unset_bit(bitmap, (entry->base + j) / 0x1000);
+                }
+        }
+}
+
+static void
+gvm_bitmap_init(void)
+{
+        uintptr_t highest_addr = 0;
+        size_t highest_page_idx = 0;
+        struct limine_memmap_entry *entry;
+
+        /* Find the highest entry */
+        for (size_t i = 0; i < mmap_resp->entry_count; ++i) {
+                entry = mmap_resp->entries[i];
+
+                if (entry->type != LIMINE_MEMMAP_USABLE) {
+                        continue;
+                }
+
+                highest_addr = MAX(highest_addr, entry->base + entry->length);
+        }
+
+        highest_page_idx = highest_addr / 0x1000;
+        bitmap_size = ALIGN_UP(highest_page_idx / 8, 0x1000);
+
+        gvm_bitmap_alloc();
+        gvm_bitmap_populate();
 }
 
 /*
- * Sets up the frame queue (once)
+ * Sets up the bitmap (once)
  * and returns the amount of physical
  * memory available on the system.
+ *
+ * Be sure to call frameq_sort().
  */
 static size_t
-gvm_init_frameq(void)
+gvm_startup(void)
 {
         static bool has_cached_val = false;
         static size_t cached_val = 0;
@@ -92,12 +143,13 @@ gvm_init_frameq(void)
                 return cached_val;
         }
 
+        gvm_bitmap_init();
+
         for (size_t i = 0; i < mmap_resp->entry_count; ++i) {
                 entry = mmap_resp->entries[i];
                 if (entry->type != LIMINE_MEMMAP_USABLE) {
                         continue;
                 }
-                gvm_push_pageframe(entry->base);
                 size_bytes += entry->length;
         }
 
@@ -107,70 +159,61 @@ gvm_init_frameq(void)
 }
 
 /*
- * Helper function for allocating
- * a single page frame.
+ * Allocates `count` frames.
+ * Returns 0 on failure, otherwise
+ * the base of the allocated physical
+ * memory (physical address).
+ *
+ * It is safe to assume the returned memory
+ * is contigous.
  */
-static uintptr_t
-gvm_pageframe_alloc_single(void)
-{
-        struct pageframe *frame = NULL;
-
-        if (TAILQ_EMPTY(&frameq)) {
-                /* Failed to allocate more physical memory */
-                return 0;
-        }
-
-        frame = TAILQ_FIRST(&frameq);
-        TAILQ_REMOVE(&frameq, frame, link);
-        return frame->base;
-}
-
 uintptr_t
 gvm_pageframe_alloc(size_t count)
 {
-        uintptr_t base = 0;
-        uintptr_t current_phys = 0;
+        size_t bitmap_end = bitmap_free_start+(bitmap_size*8);
+        size_t found_bit = 0;
+        size_t found_frames = 0;
 
-        size_t allocated_count = 1;
-        bool failure = false;
-
-        base = gvm_pageframe_alloc_single();
-        mutex_acquire(&frameq_lock);
-
-        if (base == 0) {
-                mutex_release(&frameq_lock);
+        if (count == 0) {
                 return 0;
         }
 
-        /*
-         * Attempt to allocate the requested
-         * amount of page frames. If anything
-         * goes wrong, free the pages we managed
-         * to allocate and return 0.
-         */
-        for (size_t i = 0; i < count - 1; ++i) {
-                current_phys = gvm_pageframe_alloc_single();
-                ++allocated_count;
+        mutex_acquire(&bitmap_lock);
 
-                if (current_phys == 0) {
-                        failure = true;
-                        break;
+        for (size_t i = bitmap_free_start; i < bitmap_end; ++i) {
+                if (bitmap_test_bit(bitmap, i) == 0) {
+                        /* Non-free memory, reset values */
+                        found_bit = 0;
+                        found_frames = 0;
+                        continue;
+                }
+
+                if (found_bit == 0) {
+                        found_bit = i;
+                }
+
+                if ((found_frames++) == count) {
+                        /* We found what we needed */
+                        for (size_t j = found_bit; j < found_bit + count; ++j) {
+                                bitmap_unset_bit(bitmap, j);
+                        }
+
+                        mutex_release(&bitmap_lock);
+                        return 0x1000*found_bit;
                 }
         }
-        if (failure) {
-                gvm_pageframe_free(base, allocated_count);
-                mutex_release(&frameq_lock);
-                return 0;
-        }
 
-        mutex_release(&frameq_lock);
-        return base;
+        mutex_release(&bitmap_lock);
+        return 0;
 }
+
 void
 gvm_pageframe_free(uintptr_t base, size_t count)
 {
-        for (size_t i = 0; i < count; ++i) {
-                gvm_push_pageframe(base + (0x1000*i));
+        size_t start_bit = base/0x1000;
+
+        for (size_t i = start_bit; i < start_bit+count; ++i) {
+                bitmap_set_bit(bitmap, i);
         }
 }
 
@@ -180,8 +223,7 @@ gvm_pageframe_init(void)
         size_t mem_mib = 0;
 
         mmap_resp = mmap_req.response;
-        TAILQ_INIT(&frameq);
-        mem_mib = gvm_init_frameq();
+        mem_mib = gvm_startup();
 
         /*
          * Write out how much memory
