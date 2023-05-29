@@ -41,7 +41,8 @@ MODULE("gvm_dcache");
  * shifting the VA right over by 12
  * and instead of getting res % dcache_entries
  * to convert it to an index, we do
- * res & (dcache_entries - 1).
+ * res & (dcache_entries - 1) because it is
+ * faster.
  */
 #define DCACHE_INDEX_OF(va, dcache_entries) \
         (va >> 12) & (dcache_entries - 1)
@@ -131,11 +132,10 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
 
         mutex_acquire(&dcache->lock);
         entry = &dcache->entries[index];
-
         /*
          * If the virtual address in this found
          * cache entry maches the one we are
-         * looking for, we found it!
+         * looking for, we got a cache hit!
          *
          * If the virtual address in this found
          * cache entry doesn't equal the one we
@@ -144,7 +144,6 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
          * 1. There's a collision with this VA.
          * 2. This VA doesn't have a cache entry.
          */
-
         if (entry->va == va) {
                 /* Hit, return the PA */
                 mutex_release(&dcache->lock);
