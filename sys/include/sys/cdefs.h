@@ -37,6 +37,7 @@
 #define __packed        __attribute__((__packed__))
 #define __unused        __attribute__((__unused__))
 #define __used          __attribute__((__used__))
+#define __aligned(n)    __attribute__((__aligned__(n)))
 #define __section(s)    __attribute__((__section__(s)))
 #define __module        __used __section(".modules")
 #define __weak          __attribute__((__weak__))
@@ -70,6 +71,8 @@
 # define __ASM      __asm__ __volatile__
 # define __isr      __attribute__((__interrupt__))
 #endif      /* defined(_KERNEL) */
+
+#define __cacheline_aligned __aligned(64)
 
 /*
  * This will cause a warning
