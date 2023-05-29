@@ -70,6 +70,7 @@ typedef enum {
  */
 struct translation_table {
         uintptr_t pa;
+        uint8_t level;          /* Should start at 0 */
         pagesize_t pagesize;
         struct mutex lock;
 };
@@ -107,5 +108,12 @@ struct pagemap pmap_get_pagemap(void);
  * to architecture specific PTE flags.
  */
 size_t pmap_get_pte_flags(size_t vm_flags);
+
+/*
+ * Converts a va along with a translation
+ * table level to an index for that translation
+ * table. Returns -1 on failure.
+ */
+ssize_t pmap_get_table_index(uint8_t level, uintptr_t va);
 
 #endif          /* _GVM_PMAP_H_ */

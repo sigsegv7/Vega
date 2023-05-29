@@ -183,6 +183,7 @@ pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
                 /* Found a mapping table */
                 tt_out->pa = pdpt;
                 tt_out->pagesize = PAGESIZE_1GB;
+                tt_out->level = 1;
                 return 0;
         } else if (is_huge && pagesize != PAGESIZE_1GB) {
                 /* We requested a smaller page, let GVM handle this */
@@ -204,6 +205,7 @@ pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
                    || pagesize == PAGESIZE_ANY) {
                 /* Found a mapping table */
                 tt_out->pa = pd;
+                tt_out->level = 2;
                 tt_out->pagesize = PAGESIZE_2MB;
                 return 0;
         } else if (is_huge && pagesize != PAGESIZE_2MB) {
@@ -243,4 +245,21 @@ pmap_get_pte_flags(size_t vm_flags)
         if (__TEST(vm_flags & __GVM_HUGE))
                 ret |= PTE_PS;
         return ret;
+}
+
+ssize_t
+pmap_get_table_index(uint8_t level, uintptr_t va)
+{
+        switch (level) {
+        case 0:
+                return PML4_INDEX(va);
+        case 1:
+                return PDPT_INDEX(va);
+        case 2:
+                return PD_INDEX(va);
+        case 3:
+                return PT_INDEX(va);
+        default:
+                return -1;
+        }
 }
