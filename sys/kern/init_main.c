@@ -36,6 +36,7 @@
 #include <machine/cpu.h>
 #include <gvm/gvm_pageframe.h>
 #include <gvm/gvm_page.h>
+#include <mm/kheap.h>
 
 void
 main(void)
@@ -57,6 +58,9 @@ main(void)
 
         /* Set up the GVM pageframe system */
         gvm_pageframe_init();
+
+        /* Setup the kernel heap */
+        kheap_init();
 
         /* Setup the GVM page system */
         gvm_page_init();
