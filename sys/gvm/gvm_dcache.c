@@ -147,6 +147,7 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
 
         if (entry->va == va) {
                 /* Hit, return the PA */
+                mutex_release(&dcache->lock);
                 return entry->pa;
         }
 
@@ -156,11 +157,13 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
          */
         if (!entry->bucket_is_init) {
                 /* No bucket, cache miss */
+                mutex_release(&dcache->lock);
                 return 0;
         }
         TAILQ_FOREACH(entry, &entry->bucket, link) {
                 if (entry->va == va) {
                         /* We got a hit, return the PA */
+                        mutex_release(&dcache->lock);
                         return entry->pa;
                 }
         }
