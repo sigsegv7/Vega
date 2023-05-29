@@ -27,40 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gvm/gvm_page.h>
-#include <gvm/gvm_pmap.h>
-#include <gvm/gvm_dcache.h>
-#include <gvm/gvm.h>
-#include <sys/syslog.h>
+#ifndef _GVM_DCACHE_H_
+#define _GVM_DCACHE_H_
+
+#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/mutex.h>
 #include <sys/queue.h>
-#include <sys/module.h>
-
-MODULE("gvm_page");
-
-const size_t g_pagesize_map[] = {
-    [PAGESIZE_1GB] = 0x40000000,
-    [PAGESIZE_2MB] = 0x200000,
-    [PAGESIZE_4K]  = 0x1000
-};
-
-#define GVM_PAGE_DEBUG 1
-
-#if GVM_PAGE_DEBUG
-#define pr_debug(fmt, ...) kdebug(fmt, ##__VA_ARGS__)
-#else
-#define pr_debug(fmt, ...)
-#endif
 
 /*
- * TODO: It would be best to store the dcache
- *       per pagemap.
+ * Datacache for GVM operations.
  */
-static struct gvm_dcache dcache = GVM_DCACHE_DECLARE;
+struct gvm_dcache_entry {
+        uintptr_t va;                           /* Virtual address (used as key) */
+        uintptr_t pa;                           /* Physical address */
+        uint8_t resident : 1;                   /* 1 if a resident entry */
+        uint8_t bucket_is_init : 1;             /* 1 if bucket is setup */
 
-void
-gvm_page_init(void)
-{
-        __try_call_weak(pmap_init);
-        gvm_dcache_init(&dcache);
-        pr_debug("GVM page system is up!\n");
-}
+        /* For handling collisions */
+        TAILQ_ENTRY(gvm_dcache_entry) link;
+        TAILQ_HEAD(, gvm_dcache_entry) bucket;
+        size_t bucket_size;                     /* In entries */
+};
+
+struct gvm_dcache {
+        struct mutex lock;
+        struct gvm_dcache_entry *entries;
+        size_t entry_count;                     /* Must be a power of 2 */
+};
+
+#define GVM_DCACHE_DECLARE {            \
+                .entries = NULL,        \
+                .entry_count = 0        \
+        }
+
+int gvm_dcache_init(struct gvm_dcache *dcache);
+
+uintptr_t gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va);
+
+int gvm_dcache_insert_pa(struct gvm_dcache *dcache, uintptr_t va,
+                         uintptr_t pa);
+
+#endif          /* _GVM_DCACHE_H_ */
