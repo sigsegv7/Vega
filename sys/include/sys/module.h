@@ -27,31 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SYSLOG_H_
-#define _SYS_SYSLOG_H_
-
-#include <stdarg.h>
+#include <sys/cdefs.h>
 
 #if defined(_KERNEL)
 
-#define kinfo(fmt, ...)                            \
-        kprintf("\033[32m%s:\033[0m ", __MODULE_NAME);  \
-        kprintf(fmt, ##__VA_ARGS__);
+struct kmod {
+        const char *name;
+        uintptr_t rip;
+};
 
-#define kwarn(fmt, ...) \
-        kprintf("\033[32m%s:\033[35m ", __MODULE_NAME);  \
-        kprintf(fmt, ##__VA_ARGS__);                     \
-        kprintf("\033[0m");
+extern symbol __modules_init_start;
+extern symbol __modules_init_end;
 
-#define kerr(fmt, ...) \
-        kprintf("\033[32m%s:\033[31m ", __MODULE_NAME);  \
-        kprintf(fmt, ##__VA_ARGS__);                     \
-        kprintf("\033[0m");
+#define MODULE(name) \
+        __unused static const char *const __MODULE_NAME = name
 
-void syslog_init(void);
-void vkprintf(const char *fmt, va_list *ap);
-void kprintf(const char *fmt, ...);
-void kprintf_oflag(int attr, const char *fmt, ...);
+#define EXPORT_MODULE(INIT_FUNC)                                \
+        __module static const struct kmod __kmod_export = {     \
+                .name = __MODULE_NAME,                          \
+                .rip  = (uintptr_t)INIT_FUNC                    \
+        }
 
-#endif          /* defined(_KERNEL) */
-#endif          /* _SYS_SYSLOG_H_ */
+#endif
