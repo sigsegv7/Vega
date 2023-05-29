@@ -27,35 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <lib/logo.h>
-#include <dev/video/fb.h>
-#include <machine/cpu.h>
-#include <gvm/gvm_pageframe.h>
+#include <gvm/gvm.h>
 
-void
-main(void)
-{
-        /* Get the main framebuffer working */
-        fb_register_front();
-
-        /* Start up the TTY */
-        tty_init();
-
-        /* Start up the kernel logging subsystem */
-        syslog_init();
-
-        /* Write out the logo, version and copyright */
-        print_logo();
-
-        /* Setup the bootstrap processor */
-        bsp_early_init();
-
-        /* Set up the GVM pageframe system */
-        gvm_pageframe_init();
-
-	for (;;);
-}
+volatile struct limine_hhdm_request g_hhdm_request = {
+        .id = LIMINE_HHDM_REQUEST,
+        .revision = 0
+};

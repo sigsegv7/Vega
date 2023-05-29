@@ -27,35 +27,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _GVM_H_
+#define _GVM_H_
+
+#include <sys/types.h>
 #include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <lib/logo.h>
-#include <dev/video/fb.h>
-#include <machine/cpu.h>
-#include <gvm/gvm_pageframe.h>
+#include <sys/limine.h>
 
-void
-main(void)
-{
-        /* Get the main framebuffer working */
-        fb_register_front();
+extern volatile struct limine_hhdm_request g_hhdm_request;
 
-        /* Start up the TTY */
-        tty_init();
+#define VM_HIGHER_HALF (g_hhdm_request.response->offset)
 
-        /* Start up the kernel logging subsystem */
-        syslog_init();
+/*
+ * Convert physical address
+ * to a virtual address by adding
+ * the HDDM offset. If __CHECKER__
+ * is defined, just give back NULL
+ * so sparse doesn't generate warnings.
+ */
+#if defined(__CHECKER__)
+#define phys_to_virt(phys) NULL
+#else
+#define phys_to_virt(phys) (void *)(phys + VM_HIGHER_HALF)
+#endif
 
-        /* Write out the logo, version and copyright */
-        print_logo();
+#define virt_to_phys(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
-        /* Setup the bootstrap processor */
-        bsp_early_init();
-
-        /* Set up the GVM pageframe system */
-        gvm_pageframe_init();
-
-	for (;;);
-}
+#endif          /* _GVM_H_ */
