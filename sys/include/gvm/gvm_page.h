@@ -27,39 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <lib/logo.h>
-#include <dev/video/fb.h>
-#include <machine/cpu.h>
-#include <gvm/gvm_pageframe.h>
-#include <gvm/gvm_page.h>
+/*
+ * Page related operations.
+ */
 
-void
-main(void)
-{
-        /* Get the main framebuffer working */
-        fb_register_front();
+#ifndef _GVM_PAGE_H_
+#define _GVM_PAGE_H_
 
-        /* Start up the TTY */
-        tty_init();
+#include <sys/types.h>
 
-        /* Start up the kernel logging subsystem */
-        syslog_init();
+extern const size_t g_pagesize_map[];
 
-        /* Write out the logo, version and copyright */
-        print_logo();
+void gvm_page_init(void);
 
-        /* Setup the bootstrap processor */
-        bsp_early_init();
-
-        /* Set up the GVM pageframe system */
-        gvm_pageframe_init();
-
-        /* Setup the GVM page system */
-        gvm_page_init();
-
-	for (;;);
-}
+#endif

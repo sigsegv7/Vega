@@ -27,39 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <lib/logo.h>
-#include <dev/video/fb.h>
-#include <machine/cpu.h>
-#include <gvm/gvm_pageframe.h>
 #include <gvm/gvm_page.h>
+#include <gvm/gvm_pmap.h>
+#include <gvm/gvm.h>
+#include <sys/syslog.h>
+#include <sys/module.h>
+
+MODULE("gvm_page");
+
+const size_t g_pagesize_map[] = {
+    [PAGESIZE_1GB] = 0x40000000,
+    [PAGESIZE_2MB] = 0x200000,
+    [PAGESIZE_4K]  = 0x1000
+};
+
+#define GVM_PAGE_DEBUG 1
+
+#if GVM_PAGE_DEBUG
+#define pr_debug(fmt, ...) kdebug(fmt, ##__VA_ARGS__)
+#else
+#define pr_debug(fmt, ...)
+#endif
 
 void
-main(void)
+gvm_page_init(void)
 {
-        /* Get the main framebuffer working */
-        fb_register_front();
+        struct translation_table tt;
 
-        /* Start up the TTY */
-        tty_init();
-
-        /* Start up the kernel logging subsystem */
-        syslog_init();
-
-        /* Write out the logo, version and copyright */
-        print_logo();
-
-        /* Setup the bootstrap processor */
-        bsp_early_init();
-
-        /* Set up the GVM pageframe system */
-        gvm_pageframe_init();
-
-        /* Setup the GVM page system */
-        gvm_page_init();
-
-	for (;;);
+        __try_call_weak(pmap_init);
+        pmap_get_map_table(pmap_get_pagemap(), VM_HIGHER_HALF,
+                           PAGESIZE_4K, &tt, false);
+        pr_debug("GVM page system is up!\n");
+        pr_debug("paddr=0x%x\n", tt.pa);
 }

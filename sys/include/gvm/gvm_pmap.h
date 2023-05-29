@@ -27,31 +27,79 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GVM_H_
-#define _GVM_H_
+/*
+ * Arch subsystems must implement
+ * these functions (physical map subsystem).
+ */
 
-#include <sys/types.h>
+#ifndef _GVM_PMAP_H_
+#define _GVM_PMAP_H_
+
 #include <sys/cdefs.h>
-#include <sys/limine.h>
+#include <sys/types.h>
+#include <sys/mutex.h>
 #include <machine/pagemap.h>
 
-extern volatile struct limine_hhdm_request g_hhdm_request;
+/* Unknown granule passed */
+#define PMAP_UNKNOWN_GRANULE    1
 
-#define VM_HIGHER_HALF (g_hhdm_request.response->offset)
+/* Level is zero */
+#define PMAP_NO_LEVEL           2
+
+/* Page size not implemented */
+#define PMAP_UNIMPL_SIZE        3
+
+/* Requested smaller page than what was found */
+#define PMAP_UNMATCHED_SIZE     4
+
+/* Out of memory */
+#define PMAP_OOM                4
+
+typedef enum {
+        PAGESIZE_4K,
+        PAGESIZE_2MB,
+        PAGESIZE_1GB,
+        PAGESIZE_ANY
+} pagesize_t;
 
 /*
- * Convert physical address
- * to a virtual address by adding
- * the HDDM offset. If __CHECKER__
- * is defined, just give back NULL
- * so sparse doesn't generate warnings.
+ * Defines a translation table
+ * for paging.
+ *
+ * @pa: Physical address.
  */
-#if defined(__CHECKER__)
-#define phys_to_virt(phys) NULL
-#else
-#define phys_to_virt(phys) (void *)(phys + VM_HIGHER_HALF)
-#endif
+struct translation_table {
+        uintptr_t pa;
+        pagesize_t pagesize;
+        struct mutex lock;
+};
 
-#define virt_to_phys(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
+/*
+ * Optional - Sets up architecture
+ * related virtual memory stuff.
+ */
+__weak void pmap_init(void);
 
-#endif          /* _GVM_H_ */
+/*
+ * Fetches the translation table for
+ * mapping a page. Returns < 0 value
+ * on failure (See PMAP_* defines).
+ *
+ * @pagemap: Pagemap for the target virtual address space.
+ * @va: Virtual address to lookup.
+ * @pagesize: Size of the page to lookup.
+ * @tt_out: Found translation table will be written here.
+ * @alloc: If set to true, allocate space for missing translation table entry.
+ */
+int pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
+                       pagesize_t pagesize,
+                       struct translation_table *tt_out,
+                       bool alloc);
+
+/*
+ * Returns the pagemap for the current
+ * address space.
+ */
+struct pagemap pmap_get_pagemap(void);
+
+#endif          /* _GVM_PMAP_H_ */

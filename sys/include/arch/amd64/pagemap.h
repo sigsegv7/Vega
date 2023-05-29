@@ -27,39 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <lib/logo.h>
-#include <dev/video/fb.h>
-#include <machine/cpu.h>
-#include <gvm/gvm_pageframe.h>
-#include <gvm/gvm_page.h>
+#ifndef _AMD64_PAGEMAP_H_
+#define _AMD64_PAGEMAP_H_
 
-void
-main(void)
-{
-        /* Get the main framebuffer working */
-        fb_register_front();
+#include <sys/types.h>
+#include <sys/mutex.h>
 
-        /* Start up the TTY */
-        tty_init();
+struct pagemap {
+        uintptr_t cr3;
+        struct mutex lock;      /* Required by GVM */
+};
 
-        /* Start up the kernel logging subsystem */
-        syslog_init();
-
-        /* Write out the logo, version and copyright */
-        print_logo();
-
-        /* Setup the bootstrap processor */
-        bsp_early_init();
-
-        /* Set up the GVM pageframe system */
-        gvm_pageframe_init();
-
-        /* Setup the GVM page system */
-        gvm_page_init();
-
-	for (;;);
-}
+#endif
