@@ -77,7 +77,7 @@ struct translation_table {
 
 /*
  * Optional - Sets up architecture
- * related virtual memory stuff.
+ * specific virtual memory stuff.
  */
 __weak void pmap_init(void);
 
