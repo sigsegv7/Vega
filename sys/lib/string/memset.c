@@ -38,3 +38,13 @@ memset32(void *src, uint32_t c, size_t n)
 
         return src;
 }
+
+void *
+memset(void *src, uint8_t c, size_t n)
+{
+        for (size_t i = 0; i < n; ++i) {
+                ((uint8_t *)src)[i] = c;
+        }
+
+        return src;
+}
