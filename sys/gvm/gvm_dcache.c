@@ -58,16 +58,15 @@ MODULE("gvm_dcache");
 int
 gvm_dcache_insert_pa(struct gvm_dcache *dcache, uintptr_t va, uintptr_t pa)
 {
+        size_t index, newsize;
+        struct gvm_dcache_entry *entry;
+
         /* Sanitize input; zero is invalid */
         if (va == 0 || pa == 0) {
                 return -1;
         }
 
         mutex_acquire(&dcache->lock);
-
-        size_t index, newsize;
-        struct gvm_dcache_entry *entry;
-
         if (dcache->entries == NULL) {
                 kerr("Attempting to insert PA into uninitialized dcache.\n");
                 kerr("Failed to insert [va: 0x%x, pa: 0x%x] into dcache\n");
@@ -123,12 +122,12 @@ gvm_dcache_insert_pa(struct gvm_dcache *dcache, uintptr_t va, uintptr_t pa)
 uintptr_t
 gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
 {
+        size_t index = DCACHE_INDEX_OF(va, dcache->entry_count);
+        struct gvm_dcache_entry *entry = NULL;
+
         if (va == 0) {
                 return 0;
         }
-
-        size_t index = DCACHE_INDEX_OF(va, dcache->entry_count);
-        struct gvm_dcache_entry *entry = NULL;
 
         mutex_acquire(&dcache->lock);
         entry = &dcache->entries[index];
