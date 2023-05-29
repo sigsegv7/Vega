@@ -39,6 +39,23 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 
 #define VM_HIGHER_HALF (g_hhdm_request.response->offset)
 
+#define GVM_MAP_PRESENT      __BIT(0)
+#define GVM_MAP_WRITABLE     __BIT(1)
+#define GVM_MAP_EXEC         __BIT(2)
+#define GVM_MAP_GLOBAL       __BIT(3)
+#define GVM_MAP_USER         __BIT(4)
+#define GVM_HUGE_2MB         __BIT(5)
+#define GVM_HUGE_1GB         __BIT(6)
+
+
+/* Reserved for internal GVM usage */
+#define __GVM_HUGE (GVM_HUGE_2MB | GVM_HUGE_1GB)
+#define __GVM_MAP_ALL (GVM_MAP_PRESENT   |    \
+                       GVM_MAP_WRITABLE  |    \
+                       GVM_MAP_EXEC      |    \
+                       GVM_MAP_GLOBAL    |    \
+                       GVM_MAP_USER)
+
 /*
  * Convert physical address
  * to a virtual address by adding

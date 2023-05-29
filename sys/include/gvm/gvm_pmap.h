@@ -102,4 +102,10 @@ int pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
  */
 struct pagemap pmap_get_pagemap(void);
 
+/*
+ * Converts VM flags (GVM_MAP_*, GVM_HUGE_* in gvm.h)
+ * to architecture specific PTE flags.
+ */
+size_t pmap_get_pte_flags(size_t vm_flags);
+
 #endif          /* _GVM_PMAP_H_ */

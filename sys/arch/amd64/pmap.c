@@ -228,3 +228,19 @@ pmap_get_pagemap(void)
         );
         return ret;
 }
+
+size_t
+pmap_get_pte_flags(size_t vm_flags)
+{
+        size_t ret = PTE_PRESENT;
+
+        if (__TEST(vm_flags & GVM_MAP_WRITABLE))
+                ret |= PTE_WRITABLE;
+        if (__TEST(vm_flags & GVM_MAP_GLOBAL))
+                ret |= PTE_GLOBAL;
+        if (__TEST(vm_flags & GVM_MAP_USER))
+                ret |= PTE_USER;
+        if (__TEST(vm_flags & __GVM_HUGE))
+                ret |= PTE_PS;
+        return ret;
+}
