@@ -80,10 +80,8 @@
 
 #if defined(__CHECKER__)
 # define __devmem       __attribute__((noderef, address_space(1)))
-# define __force        __attribute__((force))
 #else
 # define __devmem
-# define __force
 #endif
 
 typedef char symbol[];
