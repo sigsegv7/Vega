@@ -99,14 +99,6 @@ gvm_dcache_evict(struct gvm_dcache *dcache)
                         memset(tmp, 0, sizeof(struct gvm_dcache_entry));
                         --dcache->entry_count;
                         return;
-                } else {
-                        /*
-                         * Nothing needed to be evicted.
-                         * This should not happen but
-                         * it is better to be safe
-                         * than sorry.
-                         */
-                        return;
                 }
 
                 if ((i++) >= dcache->watermark) {
