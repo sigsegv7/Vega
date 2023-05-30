@@ -173,12 +173,13 @@ gvm_dcache_insert_pa(struct gvm_dcache *dcache, uintptr_t va, uintptr_t pa)
                         mutex_release(&dcache->lock);
                         return -1;
                 }
-
+                /* Set up the bucket entry */
                 bentry->va = va;
-                entry->pa = pa;
+                bntry->pa = pa;
                 bentry->resident = 1;
                 bentry->eviction_pass = 1;
 
+                /* Insert bucket entry */
                 TAILQ_INSERT_TAIL(&entry->bucket, bentry, link);
                 ++entry->bucket_size;
                 ++dcache->entry_count;
