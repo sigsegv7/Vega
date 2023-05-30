@@ -37,10 +37,16 @@
 
 /*
  * Datacache for GVM operations.
+ *
+ * The `lookup_score` field is used to count
+ * how many times this cache was looked up
+ * so it can be chosen for eviction (if it has the
+ * lowest score).
  */
 struct gvm_dcache_entry {
         uintptr_t va;                           /* Virtual address (used as key) */
         uintptr_t pa;                           /* Physical address */
+        uint8_t eviction_pass : 1;              /* 1 to be free of eviction, 0 to be evicted */
         uint8_t resident : 1;                   /* 1 if a resident entry */
         uint8_t bucket_is_init : 1;             /* 1 if bucket is setup */
 
@@ -50,15 +56,33 @@ struct gvm_dcache_entry {
         size_t bucket_size;                     /* In entries */
 };
 
+/*
+ * The GVM dcache.
+ *
+ * @lock: Protects the cache as a whole.
+ * @entries: contains dcache entries
+ * @entry_count: Number of entries (including bucket entries)
+ * @watermark: Max entries before an entry is evicted.
+ */
 struct gvm_dcache {
         struct mutex lock;
         struct gvm_dcache_entry *entries;
-        size_t entry_count;                     /* Must be a power of 2 */
+        size_t entry_count;
+        size_t watermark;       /* Max cache entries (must be a power of 2) */
 };
 
-#define GVM_DCACHE_DECLARE {            \
-                .entries = NULL,        \
-                .entry_count = 0        \
+/*
+ * Be careful not to choose a watermark too
+ * low or too high! If it is too low then you
+ * will have a higher miss-rate and if it
+ * is too high, evictions will be slower.
+ *
+ * As for now, 10 to 30 should be good.
+ */
+#define GVM_DCACHE_DECLARE(WATERMARK) {         \
+                .entries = NULL,                \
+                .entry_count = 0,               \
+                .watermark = WATERMARK,         \
         }
 
 int gvm_dcache_init(struct gvm_dcache *dcache);

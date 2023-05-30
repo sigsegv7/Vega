@@ -44,6 +44,7 @@ const size_t g_pagesize_map[] = {
 };
 
 #define GVM_PAGE_DEBUG 1
+#define WATERMARK 8
 
 #if GVM_PAGE_DEBUG
 #define pr_debug(fmt, ...) kdebug(fmt, ##__VA_ARGS__)
@@ -55,7 +56,7 @@ const size_t g_pagesize_map[] = {
  * TODO: It would be best to store the dcache
  *       per pagemap.
  */
-static struct gvm_dcache dcache = GVM_DCACHE_DECLARE;
+static struct gvm_dcache dcache = GVM_DCACHE_DECLARE(WATERMARK);
 
 void
 gvm_page_init(void)
