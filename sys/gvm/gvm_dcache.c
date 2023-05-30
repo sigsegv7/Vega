@@ -224,7 +224,7 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
          *
          * If the virtual address in this found
          * cache entry doesn't equal the one we
-         * are looking for it could be for two reasons:
+         * are looking for, it could be for two reasons:
          *
          * 1. There's a collision with this VA.
          * 2. This VA doesn't have a cache entry.
