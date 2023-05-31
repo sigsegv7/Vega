@@ -35,6 +35,7 @@
 #include <sys/queue.h>
 #include <sys/module.h>
 #include <machine/cpu_info.h>
+#include <machine/pagemap.h>
 
 MODULE("gvm_page");
 
