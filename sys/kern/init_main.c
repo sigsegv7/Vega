@@ -37,6 +37,7 @@
 #include <gvm/gvm_pageframe.h>
 #include <gvm/gvm_page.h>
 #include <mm/kheap.h>
+#include <firmware/acpi/acpi.h>
 
 void
 main(void)
@@ -64,6 +65,9 @@ main(void)
 
         /* Setup the GVM page system */
         gvm_page_init();
+
+        /* Setup the ACPI system */
+        acpi_init();
 
 	for (;;);
 }
