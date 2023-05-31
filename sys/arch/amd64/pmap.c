@@ -153,10 +153,10 @@ pmap_get_map_table(struct pagemap pagemap, uintptr_t va,
                 granule_size = g_pagesize_map[PAGESIZE_4K];
                 break;
         default:
-                return PMAP_UNKNOWN_GRANULE;
+                return -PMAP_UNKNOWN_GRANULE;
         }
 
-        /* Align the VM by the granule size */
+        /* Align the VA by the granule size */
         va = ALIGN_UP(va, granule_size);
 
         /*
