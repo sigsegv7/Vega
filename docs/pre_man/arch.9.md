@@ -74,12 +74,25 @@ from ``gvm/gvm_dcache.h`` to hold caching related information.
 
 _Requirements in ``cpu_info.h``_:
 
+NOTE: Struct definitions here must have an ``#if !defined(__ASSEMBLER__)``
+above it and in the ``#else`` clause, there should be defines
+denoting the offsets of fields in the ``processor_ctx`` struct.
+
+A struct of type ``processor_ctx`` which contains the following (as well
+of optional architecture specific fields):
+
+- ``sched_init``
+
+The ``sched_init`` field indicates that the scheduler is running
+and this processor can have processes running on it.
+
 A struct of type ``struct processor_info`` that can contain
 machine dependent information but must also contain the following
 fields:
 
 - ``struct pagemap pagemap``
 - ``struct mutex lock``
+- ``struct processor_ctx *ctx``
 
 ``struct pagemap`` can be found in ``machine/pagemap.h``
 
@@ -90,7 +103,12 @@ You must also extern the ``g_bsp_info`` variable
 defined in ``cpu.c``.
 
 # CODE REFERENCES
-``sys/include/arch/amd64/cpu.h``
+```
+sys/include/gvm/gvm_pmap.h
+sys/include/arch/amd64/cpu.h
+sys/include/arch/amd64/cpu_info.h
+sys/arch/amd64/pmap.c
+```
 
 # SEE ALSO
 ``gvm(9)``
