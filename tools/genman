@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p docs/man/
+
 for file in $(find docs/pre_man -name "*.md")
 do
         name=${file%.md}.man
