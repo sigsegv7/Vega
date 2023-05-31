@@ -32,6 +32,21 @@
 
 #include <sys/cdefs.h>
 
+#if defined(__aarch64__)
+#define cpu_read_sysreg(name) __extension__ ({          \
+                size_t ret;                               \
+                __asm("mrs %0, " #name : "=r" (ret));     \
+                ret;                                      \
+        })
+
+#define cpu_write_sysreg(name, val) __extension__ ({           \
+                __asm("msr " #name ", %0" :: "r" (val));       \
+        })
+
+#define isb() __ASM("isb")
+
+#endif
+
 static inline void
 irq_disable(void)
 {

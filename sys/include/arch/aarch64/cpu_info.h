@@ -27,17 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu.h>
-#include <machine/cpu_info.h>
+#ifndef _AARCH64_CPU_INFO_H_
+#define _AARCH64_CPU_INFO_H_
 
-static struct processor_ctx bsp_ctx = { 0 };
-struct processor_info g_bsp_info = {
-        .lock = MUTEX_INIT,
-        .ctx = &bsp_ctx
+#if !defined(__ASSEMBLER__)
+
+#include <sys/types.h>
+#include <sys/mutex.h>
+#include <machine/pagemap.h>
+
+struct processor_ctx {
+        uint8_t sched_init;
 };
 
-void
-bsp_early_init(void)
-{
-        /* Stub */
-}
+struct processor_info {
+        struct pagemap pagemap;
+        struct mutex lock;
+        struct processor_ctx *ctx;
+};
+
+extern struct processor_info g_bsp_info;
+
+#else
+#define PROCESSOR_SCHED_INIT 0x0
+#endif          /* __ASSEMBLER__ */
+#endif          /* _AARCH64_CPU_INFO_H_ */

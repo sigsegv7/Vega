@@ -27,17 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu.h>
-#include <machine/cpu_info.h>
+#ifndef _ARCH_AARCH64_PAGEMAP_H_
+#define _ARCH_AARCH64_PAGEMAP_H_
 
-static struct processor_ctx bsp_ctx = { 0 };
-struct processor_info g_bsp_info = {
-        .lock = MUTEX_INIT,
-        .ctx = &bsp_ctx
+#include <sys/types.h>
+#include <sys/mutex.h>
+#include <gvm/gvm_dcache.h>
+
+struct pagemap {
+        uintptr_t ttbr[2];
+        uint16_t asid[2];
+
+        /* Required by GVM */
+        struct gvm_dcache dcache;
+        struct mutex lock;
 };
 
-void
-bsp_early_init(void)
-{
-        /* Stub */
-}
+#endif
