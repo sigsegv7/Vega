@@ -65,17 +65,16 @@ override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
 override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
+
+override CC = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
+override LD = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
+override AS = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
+
 ifeq ($(ARCH),amd64)
-	override CC = $(shell pwd)/cross/bin/x86_64-elf-gcc
-	override LD = $(shell pwd)/cross/bin/x86_64-elf-gcc
-	override AS = $(shell pwd)/cross/bin/x86_64-elf-gcc
 	override QEMU_PREFIX = x86_64
 endif
 
 ifeq ($(ARCH),aarch64)
-	override CC = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
-	override LD = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
-	override AS = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
 	override QEMU_PREFIX = aarch64
 endif
 
