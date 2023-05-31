@@ -33,7 +33,6 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/limine.h>
-#include <machine/pagemap.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
