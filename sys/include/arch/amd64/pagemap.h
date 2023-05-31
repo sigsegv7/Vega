@@ -32,10 +32,14 @@
 
 #include <sys/types.h>
 #include <sys/mutex.h>
+#include <gvm/gvm_dcache.h>
 
 struct pagemap {
         uintptr_t cr3;
-        struct mutex lock;      /* Required by GVM */
+
+        /* Required by GVM */
+        struct gvm_dcache dcache;
+        struct mutex lock;
 };
 
 #endif

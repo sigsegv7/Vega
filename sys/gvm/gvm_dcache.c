@@ -253,15 +253,24 @@ gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va)
 /*
  * Sets up a GVM dcache, returns 0
  * on success.
+ *
+ * NOTE: Be careful not to choose a watermark too
+ * low or too high! If it is too low then you
+ * will have a higher miss-rate and if it
+ * is too high, evictions will be slower.
+ *
+ * As for now, 8 to 30 should be good.
  */
 int
-gvm_dcache_init(struct gvm_dcache *dcache)
+gvm_dcache_init(struct gvm_dcache *dcache, size_t watermark)
 {
-        if (dcache->watermark < 8) {
-                /* Cannot have a watermark less than 8 */
+        if (watermark < 8 || watermark > 30) {
+                /* Invalid watermark */
                 return 1;
         }
 
+        dcache->entry_count = 0;
+        dcache->watermark = watermark;
         dcache->watermark &= ~(dcache->watermark - 1);
         dcache->entries = kcalloc(dcache->watermark,
                                   sizeof(struct gvm_dcache_entry));

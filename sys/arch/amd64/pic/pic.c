@@ -27,44 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu.h>
-#include <machine/cpu_info.h>
-#include <machine/idt.h>
-#include <machine/gdt.h>
-#include <machine/trap.h>
+#include <machine/pic/pic.h>
+#include <mm/kheap.h>
 
-static struct processor_ctx bsp_ctx = { 0 };
-struct processor_info g_bsp_info = {
-       .ctx = &bsp_ctx,
-       .lock = MUTEX_INIT
-};
-
-static void
-bsp_trap_init(void)
-{
-        idt_set_desc(0x0, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_de, 0);
-        idt_set_desc(0x1, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_db, 0);
-        idt_set_desc(0x3, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_bp, 0);
-        idt_set_desc(0x4, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_of, 0);
-        idt_set_desc(0x5, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_br, 0);
-        idt_set_desc(0x6, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_ud, 0);
-        idt_set_desc(0x7, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_nm, 0);
-        idt_set_desc(0x8, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_df, 0);
-        idt_set_desc(0xA, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_ts, 0);
-        idt_set_desc(0xB, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_np, 0);
-        idt_set_desc(0xC, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_ss, 0);
-        idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_gp, 0);
-        idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, (uintptr_t)trap_pf, 0);
-}
+static struct pic *pic0 = NULL;         /* Local APIC (if APIC system), otherwise i8259 */
+static struct pic *ioapic = NULL;
 
 void
-bsp_early_init(void)
+pic_register(struct pic *pic)
 {
-        /* Load processor specific structures */
-        idt_load();
-        gdt_load(&g_early_gdtr);
-
-        /* Setup FS to store information about this processor */
-        set_fs_base(&bsp_ctx);
-        bsp_trap_init();
+        if (pic->type == PIC_I8259 || pic->type == PIC_LAPIC) {
+                pic0 = pic;
+        } else if (pic->type == PIC_IOAPIC) {
+                ioapic = pic;
+        }
 }

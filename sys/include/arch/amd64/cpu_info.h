@@ -32,20 +32,35 @@
 
 #if !defined(__ASSEMBLER__)
 
+#include <sys/types.h>
+#include <sys/mutex.h>
+#include <machine/pagemap.h>
+
 /*
- * Information of a single processor (i.e core)
+ * Context of a single processor (i.e core)
  * within the CPU.
  *
  * NOTE: Insert fields at the _bottom_
- *       of the struct.
+ *       of the struct and add a PROCESSOR_* macro below.
  *
+ * @fxsave_area: Saved SSE registers.
  * @sched_init: 1 if scheduler is enabled
  *              for this processor.
+ * @sse_supported: 1 if SSE is supported.
  */
-struct processor_info {
+struct processor_ctx {
         char fxsave_area[512];  /* Offset 0x0 */
         uint8_t sched_init;     /* Offset 0x200 */
         uint8_t sse_supported;  /* Offset 0x201 */
+};
+
+/*
+ * Information of a single processor.
+ */
+struct processor_info {
+        struct processor_ctx *ctx;
+        struct pagemap pagemap;
+        struct mutex lock;
 };
 
 extern struct processor_info g_bsp_info;

@@ -71,24 +71,8 @@ struct gvm_dcache {
         size_t watermark;       /* Max cache entries (must be a power of 2) */
 };
 
-/*
- * Be careful not to choose a watermark too
- * low or too high! If it is too low then you
- * will have a higher miss-rate and if it
- * is too high, evictions will be slower.
- *
- * As for now, 10 to 30 should be good.
- */
-#define GVM_DCACHE_DECLARE(WATERMARK) {         \
-                .entries = NULL,                \
-                .entry_count = 0,               \
-                .watermark = WATERMARK,         \
-        }
-
-int gvm_dcache_init(struct gvm_dcache *dcache);
-
+int gvm_dcache_init(struct gvm_dcache *dcache, size_t watermark);
 uintptr_t gvm_dcache_lookup(struct gvm_dcache *dcache, uintptr_t va);
-
 int gvm_dcache_insert_pa(struct gvm_dcache *dcache, uintptr_t va,
                          uintptr_t pa);
 

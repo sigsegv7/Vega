@@ -34,6 +34,7 @@
 #include <sys/syslog.h>
 #include <sys/queue.h>
 #include <sys/module.h>
+#include <machine/cpu_info.h>
 
 MODULE("gvm_page");
 
@@ -44,7 +45,7 @@ const size_t g_pagesize_map[] = {
 };
 
 #define GVM_PAGE_DEBUG 1
-#define WATERMARK 8
+#define DCACHE_WATERMARK 8
 
 #if GVM_PAGE_DEBUG
 #define pr_debug(fmt, ...) kdebug(fmt, ##__VA_ARGS__)
@@ -52,16 +53,14 @@ const size_t g_pagesize_map[] = {
 #define pr_debug(fmt, ...)
 #endif
 
-/*
- * TODO: It would be best to store the dcache
- *       per pagemap.
- */
-static struct gvm_dcache dcache = GVM_DCACHE_DECLARE(WATERMARK);
-
 void
 gvm_page_init(void)
 {
         __try_call_weak(pmap_init);
-        gvm_dcache_init(&dcache);
+
+        /* Setup the pagemap for the BSP */
+        g_bsp_info.pagemap = pmap_get_pagemap();
+        gvm_dcache_init(&g_bsp_info.pagemap.dcache, DCACHE_WATERMARK);
+
         pr_debug("GVM page system is up!\n");
 }
